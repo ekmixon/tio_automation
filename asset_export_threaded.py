@@ -14,9 +14,10 @@ def grab_headers():
     access_key = ''
     secret_key = ''
 
-    # set the header
-    headers = {'Content-type': 'application/json', 'X-ApiKeys': 'accessKey='+access_key+';secretKey='+secret_key}
-    return headers
+    return {
+        'Content-type': 'application/json',
+        'X-ApiKeys': f'accessKey={access_key};secretKey={secret_key}',
+    }
 
 
 def get_data(url_mod):
@@ -26,17 +27,14 @@ def get_data(url_mod):
         r = requests.request('GET', url + url_mod, headers=headers, verify=True)
 
         if r.status_code == 200:
-            data = r.json()
             # print(r.headers)
-            return data
+            return r.json()
         elif r.status_code == 404:
             print('Check your query...')
             print(r)
         elif r.status_code == 429:
             print("Too many requests at a time... Threading is unbound right now.")
-        elif r.status_code == 400:
-            pass
-        else:
+        elif r.status_code != 400:
             print("Something went wrong...Don't be trying to hack me now")
             print(r)
     except ConnectionError:
@@ -53,10 +51,7 @@ def post_data(url_mod, payload):
     # send Post request to API endpoint
     r = requests.post(url + url_mod, json=payload, headers=headers, verify=True)
 
-    # retrieve data in json format
-    data = r.json()
-
-    return data
+    return r.json()
 
 
 def worker():
@@ -150,10 +145,10 @@ def request_export():
 
         # grab the export UUID
         ex_uuid = export['export_uuid']
-        print('Requesting Asset Export with ID : ' + ex_uuid)
+        print(f'Requesting Asset Export with ID : {ex_uuid}')
 
         # now check the status
-        status = get_data('/assets/export/' + ex_uuid + '/status')
+        status = get_data(f'/assets/export/{ex_uuid}/status')
 
         # status = get_data('/vulns/export/export_id/status')
         print("Status : " + str(status["status"]))
@@ -162,12 +157,10 @@ def request_export():
         not_ready = True
 
         # loop to check status until finished
-        while not_ready is True:
-            # Pull the status, then pause 5 seconds and ask again.
-            if status['status'] == 'PROCESSING' or 'QUEUED':
-                time.sleep(5)
-                status = get_data('/assets/export/' + ex_uuid + '/status')
-                print("Status : " + str(status["status"]))
+        while not_ready:
+            time.sleep(5)
+            status = get_data(f'/assets/export/{ex_uuid}/status')
+            print("Status : " + str(status["status"]))
 
             # Exit Loop once confirmed finished
             if status['status'] == 'FINISHED':
@@ -185,21 +178,23 @@ def request_export():
             new_writer.writerow(header_list)
 
         # grab all of the chunks and craft the URLS for threading
-        for y in range(len(status['chunks_available'])):
-            urls.append('/assets/export/' + ex_uuid + '/chunks/' + str(y+1))
+        urls.extend(
+            f'/assets/export/{ex_uuid}/chunks/{str(y+1)}'
+            for y in range(len(status['chunks_available']))
+        )
 
         start = time.time()
         # Create the queue and thread pool.
 
-        for i in range(4):
+        for _ in range(4):
             t = threading.Thread(target=worker)
             t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
             t.start()
 
         # stuff work items on the queue (in this case, just a number).
         #start = time.perf_counter()
-        for item in range(len(urls)):
-            q.put(urls[item])
+        for url in urls:
+            q.put(url)
 
         q.join()
         end = time.time()

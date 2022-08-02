@@ -22,15 +22,15 @@ def download_scans():
     try:
         for scan in scan_id:
             #export the scan
-            with open('{}.nessus'.format(str(scan)), 'wb') as nessus:
+            with open(f'{str(scan)}.nessus', 'wb') as nessus:
                 tio.scans.export(scan, fobj=nessus)
 
             #import the scan
-            with open('{}.nessus'.format(str(scan))) as file:
+            with open(f'{str(scan)}.nessus') as file:
                 sc.scan_instances.import_scan(file,repo_id)
 
             #delete the scan
-            os.remove('{}.nessus'.format(str(scan)))
+            os.remove(f'{str(scan)}.nessus')
     except:
         pass
 

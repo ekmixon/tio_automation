@@ -13,9 +13,10 @@ def grab_headers():
     access_key = ''
     secret_key = ''
 
-    #Set the Authentication Header
-    headers = {'Content-type':'application/json','X-ApiKeys':'accessKey='+access_key+';secretKey='+secret_key}
-    return headers
+    return {
+        'Content-type': 'application/json',
+        'X-ApiKeys': f'accessKey={access_key};secretKey={secret_key}',
+    }
 
 
 def get_data(url_mod):
@@ -28,11 +29,8 @@ def get_data(url_mod):
     #API Call
     r = requests.request('GET', url + url_mod, headers=headers, verify=False)
 
-    #convert response to json
-    data = r.json()
-
     #return data in json format
-    return data
+    return r.json()
 
 def main():
     #grab all of the scans in t.io

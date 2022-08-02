@@ -5,7 +5,11 @@ def grab_headers():
 
     access_key = ''
     secret_key = ''
-    return {'Content-type': 'application/json', 'user-agent': 'navi-TG-migration-script', 'X-ApiKeys': 'accessKey=' + access_key + ';secretKey=' + secret_key}
+    return {
+        'Content-type': 'application/json',
+        'user-agent': 'navi-TG-migration-script',
+        'X-ApiKeys': f'accessKey={access_key};secretKey={secret_key}',
+    }
 
 
 def request_data(method, url_mod, **kwargs):
@@ -49,21 +53,37 @@ def request_data(method, url_mod, **kwargs):
 
 def migrate_tgroups():
     tgroups = request_data('GET', '/target-groups')
+    d = "Imported by Script"
     for group in tgroups['target_groups']:
         member = group['members']
         name = group['name']
         type = group['type']
-        d = "Imported by Script"
         try:
             if name != 'Default':
-                payload = {"category_name": str(type), "value": str(name), "description": str(d), "filters": {"asset": {"and": [{"field": "ipv4", "operator": "eq", "value": str(member)}]}}}
+                payload = {
+                    "category_name": str(type),
+                    "value": str(name),
+                    "description": d,
+                    "filters": {
+                        "asset": {
+                            "and": [
+                                {
+                                    "field": "ipv4",
+                                    "operator": "eq",
+                                    "value": str(member),
+                                }
+                            ]
+                        }
+                    },
+                }
+
                 data = request_data('POST', '/tags/values', payload=payload)
 
                 value_uuid = data["uuid"]
                 cat_uuid = data['category_uuid']
-                print("\nI've created your new Tag - {} : {}\n".format(type, name))
-                print("The Category UUID is : {}\n".format(cat_uuid))
-                print("The Value UUID is : {}\n".format(value_uuid))
+                print(f"\nI've created your new Tag - {type} : {name}\n")
+                print(f"The Category UUID is : {cat_uuid}\n")
+                print(f"The Value UUID is : {value_uuid}\n")
         except:
             pass
 

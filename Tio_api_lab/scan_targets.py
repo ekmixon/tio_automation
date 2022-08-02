@@ -13,9 +13,10 @@ def grab_headers():
     access_key = ''
     secret_key = ''
 
-    # Set the Authentication Header
-    headers = {'Content-type': 'application/json', 'X-ApiKeys': 'accessKey=' + access_key + ';secretKey=' + secret_key}
-    return headers
+    return {
+        'Content-type': 'application/json',
+        'X-ApiKeys': f'accessKey={access_key};secretKey={secret_key}',
+    }
 
 
 def get_data(url_mod):
@@ -28,11 +29,8 @@ def get_data(url_mod):
     # API Call
     r = requests.request('GET', url + url_mod, headers=headers, verify=False)
 
-    # convert response to json
-    data = r.json()
-
     # return data in json format
-    return data
+    return r.json()
 
 
 def post_data(url_mod, payload):
@@ -45,10 +43,7 @@ def post_data(url_mod, payload):
     # send Post request to API endpoint
     r = requests.post(url + url_mod, json=payload, headers=headers, verify=False)
 
-    # retreive data in json format
-    data = r.json()
-
-    return data
+    return r.json()
 
 
 def nessus_scanners():
@@ -96,13 +91,19 @@ def scan(targets):
     #capture the users choice - putting in the wrong scanner will cause and error that we haven't programed to catch
     scanner_id = input("What scanner do you want to scan with ?.... ")
 
-    print("creating your scan of : " + targets + "  Now...")
+    print(f"creating your scan of : {targets}  Now...")
 
     #create the scan payload based on the answers we received
-    payload = dict(uuid=template, settings={"name": "Script Created Scan of " + targets,
-                                            "enabled": "true",
-                                            "scanner_id": scanner_id,
-                                            "text_targets": targets})
+    payload = dict(
+        uuid=template,
+        settings={
+            "name": f"Script Created Scan of {targets}",
+            "enabled": "true",
+            "scanner_id": scanner_id,
+            "text_targets": targets,
+        },
+    )
+
     #setup the scan
     scan_data = post_data('/scans', payload)
 
@@ -113,14 +114,19 @@ def scan(targets):
     print(scan)
 
     # launch the Scan
-    launch = requests.post('https://cloud.tenable.com/scans/'+ str(scan) + '/launch', headers=grab_headers(), verify=False)
+    launch = requests.post(
+        f'https://cloud.tenable.com/scans/{str(scan)}/launch',
+        headers=grab_headers(),
+        verify=False,
+    )
+
 
     #retreive the response so you can pull the Scan UUID
     response = launch.json()
 
     # print Scan UUID
     print("A scan started with UUID: " + str(response['scan_uuid']))
-    print("The scan ID is " + str(scan))
+    print(f"The scan ID is {str(scan)}")
 
 
 def main():

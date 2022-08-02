@@ -13,12 +13,7 @@ tio = TenableIO(access_key='', secret_key='')
 
 #Get Agent IPs from Tenable.io
 def get_ips():
-    #great an empty list
-    list = []
-    for agent in tio.agents.list():
-        ip = agent['ip']
-        list.append(ip)
-    return list
+    return [agent['ip'] for agent in tio.agents.list()]
 
 
 def get_or_create():

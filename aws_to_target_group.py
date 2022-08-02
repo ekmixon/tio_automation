@@ -5,7 +5,11 @@ from IPy import IP
 def grab_headers():
     access_key = ''
     secret_key = ''
-    return {'Content-type': 'application/json', 'user-agent': 'Navi:aws:tgroup', 'X-ApiKeys': 'accessKey=' + access_key + ';secretKey=' + secret_key}
+    return {
+        'Content-type': 'application/json',
+        'user-agent': 'Navi:aws:tgroup',
+        'X-ApiKeys': f'accessKey={access_key};secretKey={secret_key}',
+    }
 
 
 def request_data(method, url_mod, **kwargs):
@@ -81,7 +85,7 @@ def create_target_group(tg_name, tg_list):
     if group_id != 0:
         # Update current Target Group
         payload = {"name": tg_name, "members": str(trgstring), "type": "system"}
-        request_data("PUT", '/target-groups/' + str(group_id), payload=payload)
+        request_data("PUT", f'/target-groups/{str(group_id)}', payload=payload)
     else:
         # Create a New Target Group
         payload = {"name": tg_name, "members": str(trgstring), "type": "system", "acls": [{"type": "default", "permissions": 64}]}

@@ -16,9 +16,10 @@ def grab_headers():
     access_key = ''
     secret_key = ''
 
-    #Set the Authentication Header
-    headers = {'Content-type':'application/json','X-ApiKeys':'accessKey='+access_key+';secretKey='+secret_key}
-    return headers
+    return {
+        'Content-type': 'application/json',
+        'X-ApiKeys': f'accessKey={access_key};secretKey={secret_key}',
+    }
 
 
 def get_data(url_mod):
@@ -31,11 +32,8 @@ def get_data(url_mod):
     #API Call
     r = requests.request('GET', url + url_mod, headers=headers, verify=False)
 
-    #convert response to json
-    data = r.json()
-
     #return data in json format
-    return data
+    return r.json()
 
 
 def post_data(url_mod,payload):
@@ -48,10 +46,7 @@ def post_data(url_mod,payload):
     #send Post request to API endpoint
     r = requests.post(url + url_mod, json=payload, headers=headers, verify=False)
 
-    #retreive data in json format
-    data = r.json()
-
-    return data
+    return r.json()
 
 
 def vuln_export():
@@ -68,10 +63,10 @@ def vuln_export():
     ex_uuid = export['export_uuid']
 
     # Let the user know the Export ID
-    print('Requesting Export with ID : ' + ex_uuid)
+    print(f'Requesting Export with ID : {ex_uuid}')
 
     # now check the status
-    status = get_data('/vulns/export/' + ex_uuid + '/status')
+    status = get_data(f'/vulns/export/{ex_uuid}/status')
 
     print(status)
 
@@ -79,18 +74,16 @@ def vuln_export():
     not_ready = True
 
     #loop to check status until finished
-    while not_ready is True:
+    while not_ready:
         #Pull the status, then pause 5 seconds and ask again.
         if status['status'] == 'PROCESSING':
             time.sleep(5)
-            status = get_data('/vulns/export/' + ex_uuid + '/status')
+            status = get_data(f'/vulns/export/{ex_uuid}/status')
             print(status)
 
-        #Exit Loop once confirmed finished
         elif status['status'] == 'FINISHED':
             not_ready = False
 
-        #Tell the user an error occured
         else:
             print("Error occurred")
 
@@ -100,7 +93,7 @@ def vuln_export():
     #loop through all of the chunks that are available
     for x in status['chunks_available']:
         # Add 1 to the value of X because it will start at 0, and there isn't going to be  a zero chunk.
-        chunk_data = get_data('/vulns/export/' + ex_uuid + '/chunks/' + str(x))
+        chunk_data = get_data(f'/vulns/export/{ex_uuid}/chunks/{str(x)}')
 
         # Add data to our list
         data.append(chunk_data)
@@ -129,10 +122,10 @@ def asset_export():
     ex_uuid = export['export_uuid']
 
     #let the use know the export ID
-    print('Requesting Export with ID : ' + ex_uuid)
+    print(f'Requesting Export with ID : {ex_uuid}')
 
     # now check the status
-    status = get_data('/assets/export/' + ex_uuid + '/status')
+    status = get_data(f'/assets/export/{ex_uuid}/status')
 
     print(status)
 
@@ -140,7 +133,7 @@ def asset_export():
     not_ready = True
 
     # loop to check status until finished
-    while not_ready is True:
+    while not_ready:
         # Pull the status, then pause 5 seconds and ask again.
         if status['status'] == 'PROCESSING':
 
@@ -148,18 +141,16 @@ def asset_export():
             time.sleep(5)
 
             #pull new status
-            status = get_data('/assets/export/' + ex_uuid + '/status')
+            status = get_data(f'/assets/export/{ex_uuid}/status')
 
             #notify the user of the current status
             print(status)
 
-        # Exit Loop once confirmed finished
         elif status['status'] == 'FINISHED':
 
             #set not_ready to false to exit while-loop
             not_ready = False
 
-        #Inform the user or use pass to ignore any errors
         else:
             print("Something Went wrong")
 
@@ -169,7 +160,7 @@ def asset_export():
     # loop through all of the chunks
     for x in status['chunks_available']:
         #Download the chunk data
-        chunk_data = get_data('/assets/export/' + ex_uuid + '/chunks/' + str(x))
+        chunk_data = get_data(f'/assets/export/{ex_uuid}/chunks/{str(x)}')
 
         #append the data to the temp list
         data.append(chunk_data)

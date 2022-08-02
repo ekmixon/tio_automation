@@ -10,9 +10,10 @@ def grab_headers():
     access_key = ''
     secret_key = ''
 
-    #Set the Authentication Header
-    headers = {'Content-type':'application/json','X-ApiKeys':'accessKey='+access_key+';secretKey='+secret_key}
-    return headers
+    return {
+        'Content-type': 'application/json',
+        'X-ApiKeys': f'accessKey={access_key};secretKey={secret_key}',
+    }
 
 
 def get_data(url_mod):
@@ -25,11 +26,8 @@ def get_data(url_mod):
     #API Call
     r = requests.request('GET', url + url_mod, headers=headers, verify=False)
 
-    #convert response to json
-    data = r.json()
-
     #return data in json format
-    return data
+    return r.json()
 
 
 def post_data(url_mod,payload):
@@ -42,10 +40,7 @@ def post_data(url_mod,payload):
     #send Post request to API endpoint
     r = requests.post(url + url_mod, json=payload, headers=headers, verify=False)
 
-    #retreive data in json format
-    data = r.json()
-
-    return data
+    return r.json()
 
 
 def csv_export():
@@ -87,9 +82,7 @@ def csv_export():
                         csv_list.append(" ")
 
                     id = assets['id']
-                    csv_list.append(id)
-                    csv_list.append(assets['first_seen'])
-                    csv_list.append(assets['last_seen'])
+                    csv_list.extend((id, assets['first_seen'], assets['last_seen']))
                     try:
                         csv_list.append(assets['operating_systems'][0])
                     except:
@@ -105,7 +98,7 @@ def csv_export():
                     except:
                         csv_list.append(" ")
 
-                    info = get_data('/workbenches/assets/' + id + '/info')
+                    info = get_data(f'/workbenches/assets/{id}/info')
 
                     for counts in info['info']['counts']['vulnerabilities']['severities']:
                         count = counts['count']
